@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 
 	"ride-sharing/services/trip-service/internal/domain"
 	"ride-sharing/services/trip-service/internal/infrastructure/repository"
@@ -14,5 +15,9 @@ func main() {
 	fare := &domain.RideFareModel{
 		UserID: "42",
 	}
-	svc.CreateTrip(context.Background(), fare)
+	t, err := svc.CreateTrip(context.Background(), fare)
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println(t)
 }

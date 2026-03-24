@@ -1,23 +1,24 @@
+// Package main
 package main
 
 import (
 	"log"
 	"net/http"
-
-	"ride-sharing/shared/env"
-)
-
-var (
-	httpAddr = env.GetString("HTTP_ADDR", ":8081")
 )
 
 func main() {
 	log.Println("Starting API Gateway")
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Hello from API Gateway"))
-	})
+	mux := http.NewServeMux()
 
-	http.ListenAndServe(httpAddr, nil)
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: mux,
+	}
+
+	mux.HandleFunc("POST /trip/preview", handleTripPreview)
+
+	if err := server.ListenAndServe(); err != nil {
+		log.Fatal("error starting the server")
+	}
 }

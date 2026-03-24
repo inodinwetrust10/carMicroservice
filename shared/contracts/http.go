@@ -1,3 +1,4 @@
+// Package contracts
 package contracts
 
 // APIResponse is the response structure for the API.
