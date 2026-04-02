@@ -9,19 +9,24 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"ride-sharing/shared/env"
 )
 
-func main() {
-	log.Println("Starting API Gateway")
+var httpAddr = env.GetString("HTTP_ADDR", ":8081")
 
+func main() {
 	mux := http.NewServeMux()
 
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    httpAddr,
 		Handler: mux,
 	}
 
+	log.Printf("Starting API Gateway on port %s:", httpAddr)
 	mux.HandleFunc("POST /trip/preview", handleTripPreview)
+	mux.HandleFunc("/ws/drivers", handleDriversWebSocket)
+	mux.HandleFunc("/ws/riders", handleRidersWebSocket)
 
 	done := make(chan os.Signal, 1)
 	go func() {
