@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
+	grpcclients "ride-sharing/services/api-gateway/grpc_clients"
 	"ride-sharing/shared/contracts"
 )
 
@@ -19,6 +21,10 @@ func handleTripPreview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tripService, err := grpcclients.NewTripServiceClient()
+	if err != nil {
+		log.Fatal(err)
+	}
 	response := contracts.APIResponse{Data: "ok"}
 	writeJSON(w, http.StatusCreated, response)
 }
