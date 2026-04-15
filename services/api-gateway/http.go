@@ -25,6 +25,7 @@ func handleTripPreview(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer tripService.Close()
 	response := contracts.APIResponse{Data: "ok"}
 	writeJSON(w, http.StatusCreated, response)
 }
