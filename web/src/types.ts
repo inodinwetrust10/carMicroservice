@@ -37,7 +37,7 @@ export interface RouteFare {
     id: string,
     packageSlug: CarPackageSlug,
     basePrice: number,
-    totalPriceInCents?: number,
+    totalPrice?: number,
     expiresAt: Date,
     route: Route,
 }

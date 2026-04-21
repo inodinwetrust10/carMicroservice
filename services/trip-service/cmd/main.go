@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"ride-sharing/services/trip-service/internal/infrastructure/grpc"
 	"ride-sharing/services/trip-service/internal/infrastructure/repository"
 	"ride-sharing/services/trip-service/internal/service"
 
@@ -26,9 +27,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-
+	// starting the gRPC server
 	grpcServer := grpcserver.NewServer()
-
+	grpc.NewGRPCHandler(grpcServer, svc)
 	log.Printf("Starting gRPC server Trip service on %s", lis.Addr().String())
 
 	go func() {
