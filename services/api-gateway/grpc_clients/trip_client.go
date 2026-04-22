@@ -1,3 +1,4 @@
+// Package grpcclients
 package grpcclients
 
 import (
@@ -17,7 +18,7 @@ type tripServiceClient struct {
 func NewTripServiceClient() (*tripServiceClient, error) {
 	tripServiceURL := os.Getenv("TRIP_SERVICE_URL")
 	if tripServiceURL == "" {
-		tripServiceURL = "trip-service:9093"
+		tripServiceURL = "dns:///trip-service:9093"
 	}
 	conn, err := grpc.NewClient(tripServiceURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {

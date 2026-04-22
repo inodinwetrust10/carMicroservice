@@ -10,6 +10,7 @@ import (
 
 	"ride-sharing/services/trip-service/internal/domain"
 	tripType "ride-sharing/services/trip-service/pkg/types"
+	"ride-sharing/shared/proto/trip"
 	"ride-sharing/shared/types"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -31,6 +32,7 @@ func (s *service) CreateTrip(ctx context.Context, fare *domain.RideFareModel) (*
 		UserID:   fare.UserID,
 		Status:   "pending",
 		RideFare: fare,
+		Driver:   &trip.TripDriver{},
 	}
 	return s.repo.CreateTrip(ctx, t)
 }
@@ -61,7 +63,7 @@ func (s *service) EstimatePackagesPriceWithRoute(route *tripType.OsrmApiResponse
 	return estimatedFares
 }
 
-func (s *service) GenerateTripFare(ctx context.Context, rideFares []*domain.RideFareModel, userID string) ([]*domain.RideFareModel, error) {
+func (s *service) GenerateTripFare(ctx context.Context, rideFares []*domain.RideFareModel, userID string, route *tripType.OsrmApiResponse) ([]*domain.RideFareModel, error) {
 	fares := make([]*domain.RideFareModel, len(rideFares))
 	for i, f := range rideFares {
 		id := primitive.NewObjectID()
@@ -70,6 +72,7 @@ func (s *service) GenerateTripFare(ctx context.Context, rideFares []*domain.Ride
 			UserID:      userID,
 			TotalPrice:  f.TotalPrice,
 			PackageSlug: f.PackageSlug,
+			Route:       route,
 		}
 		if err := s.repo.SaveRideFare(ctx, fare); err != nil {
 			return nil, fmt.Errorf("failed to save trip fare %v", err)
@@ -95,6 +98,21 @@ func estimateFareRoute(fare *domain.RideFareModel, route *tripType.OsrmApiRespon
 		TotalPrice:  totalPrice,
 		PackageSlug: fare.PackageSlug,
 	}
+}
+
+func (s *service) GetAndValidateFare(ctx context.Context, fareID, userID string) (*domain.RideFareModel, error) {
+	fare, err := s.repo.GetRideFareByID(ctx, fareID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get trip fare: %v", err)
+	}
+	if fare == nil {
+		return nil, fmt.Errorf("fare does not exists")
+	}
+	// some validations
+	if userID != fare.UserID {
+		return nil, fmt.Errorf("fare does not belong to the user: %v", err)
+	}
+	return fare, nil
 }
 
 func getBaseFares() []*domain.RideFareModel {
