@@ -25,6 +25,7 @@ func main() {
 
 	log.Printf("Starting API Gateway on port %s:", httpAddr)
 	mux.HandleFunc("POST /trip/preview", enableCORS(handleTripPreview))
+	mux.HandleFunc("POST /trip/start", enableCORS(handleTripStart))
 	mux.HandleFunc("/ws/drivers", handleDriversWebSocket)
 	mux.HandleFunc("/ws/riders", handleRidersWebSocket)
 
