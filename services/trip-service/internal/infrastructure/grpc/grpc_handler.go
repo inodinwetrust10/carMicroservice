@@ -43,7 +43,7 @@ func (h *gRPCHandler) CreateTrip(ctx context.Context, req *pb.CreateTripRequest)
 		return nil, status.Errorf(codes.Internal, "failed to create the trip: %v", err)
 	}
 	// trip created even example
-	if err := h.publisher.PublishTripCreated(ctx); err != nil {
+	if err := h.publisher.PublishTripCreated(ctx, trip); err != nil {
 		log.Println("message not published for trip creation")
 		return nil, fmt.Errorf("trip created event was not published to the queue: %v", err)
 	}

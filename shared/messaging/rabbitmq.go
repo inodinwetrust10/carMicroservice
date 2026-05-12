@@ -3,6 +3,7 @@ package messaging
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -85,8 +86,12 @@ func (r *RabbitMQ) ConsumeMessages(queueName string, handler MessageHandler) err
 	return nil
 }
 
-func (r *RabbitMQ) PublishMessage(ctx context.Context, routingKey string, message string) error {
+func (r *RabbitMQ) PublishMessage(ctx context.Context, routingKey string, message contracts.AmqpMessage) error {
 	log.Printf("Publishing message with routing key :%s", routingKey)
+	jsonMsg, err := json.Marshal(message)
+	if err != nil {
+		return fmt.Errorf("failed to marshal the message %v", err)
+	}
 	return r.Channel.PublishWithContext(ctx,
 		TripExchange,
 		routingKey,
@@ -94,7 +99,7 @@ func (r *RabbitMQ) PublishMessage(ctx context.Context, routingKey string, messag
 		false,
 		amqp091.Publishing{
 			ContentType:  "text/plain",
-			Body:         []byte(message),
+			Body:         jsonMsg,
 			DeliveryMode: amqp091.Persistent,
 		})
 }
