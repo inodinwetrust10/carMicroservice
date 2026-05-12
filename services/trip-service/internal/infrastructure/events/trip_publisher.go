@@ -4,6 +4,7 @@ package events
 import (
 	"context"
 
+	"ride-sharing/shared/contracts"
 	"ride-sharing/shared/messaging"
 )
 
@@ -18,5 +19,5 @@ func NewTripEventPublisher(rabbitmq *messaging.RabbitMQ) *TripEventPublisher {
 }
 
 func (p *TripEventPublisher) PublishTripCreated(ctx context.Context) error {
-	return p.rabbitmq.PublishMessage(ctx, "hello", "trip created")
+	return p.rabbitmq.PublishMessage(ctx, contracts.TripEventCreated, "trip has been created")
 }

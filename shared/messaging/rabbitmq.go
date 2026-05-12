@@ -6,7 +6,13 @@ import (
 	"fmt"
 	"log"
 
+	"ride-sharing/shared/contracts"
+
 	"github.com/rabbitmq/amqp091-go"
+)
+
+const (
+	TripExchange = "trip"
 )
 
 type RabbitMQ struct {
@@ -40,6 +46,10 @@ func NewRabbitMQ(uri string) (*RabbitMQ, error) {
 }
 
 func (r *RabbitMQ) ConsumeMessages(queueName string, handler MessageHandler) error {
+	err := r.Channel.Qos(1, 0, false)
+	if err != nil {
+		return fmt.Errorf("failed to set Qos: %v", err)
+	}
 	msgs, err := r.Channel.Consume(
 		queueName, // queue
 		"",        // consumer
@@ -76,9 +86,10 @@ func (r *RabbitMQ) ConsumeMessages(queueName string, handler MessageHandler) err
 }
 
 func (r *RabbitMQ) PublishMessage(ctx context.Context, routingKey string, message string) error {
+	log.Printf("Publishing message with routing key :%s", routingKey)
 	return r.Channel.PublishWithContext(ctx,
-		"",
-		"hello",
+		TripExchange,
+		routingKey,
 		false,
 		false,
 		amqp091.Publishing{
@@ -89,8 +100,19 @@ func (r *RabbitMQ) PublishMessage(ctx context.Context, routingKey string, messag
 }
 
 func (r *RabbitMQ) setupExchangesAndQueues() error {
-	_, err := r.Channel.QueueDeclare(
-		"hello",
+	err := r.Channel.ExchangeDeclare(TripExchange, "topic", true, false, false, false, nil)
+	if err != nil {
+		return fmt.Errorf("failed to declare exchange: %s: %v", TripExchange, err)
+	}
+	if err := r.declareAndBindQueue(FindAvailableDriversQueue, []string{contracts.TripEventCreated, contracts.TripEventDriverNotInterested}, TripExchange); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *RabbitMQ) declareAndBindQueue(queueName string, messageTypes []string, exchange string) error {
+	q, err := r.Channel.QueueDeclare(
+		queueName,
 		true,
 		false,
 		false,
@@ -99,6 +121,11 @@ func (r *RabbitMQ) setupExchangesAndQueues() error {
 	)
 	if err != nil {
 		return err
+	}
+	for _, msg := range messageTypes {
+		if err := r.Channel.QueueBind(q.Name, msg, exchange, false, nil); err != nil {
+			return fmt.Errorf("failed to bind queue to %s: %v", queueName, err)
+		}
 	}
 	return nil
 }
