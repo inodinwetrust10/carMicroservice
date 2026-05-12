@@ -13,6 +13,7 @@ type RabbitMQ struct {
 	conn    *amqp091.Connection
 	Channel *amqp091.Channel
 }
+type MessageHandler func(context.Context, amqp091.Delivery) error
 
 func NewRabbitMQ(uri string) (*RabbitMQ, error) {
 	conn, err := amqp091.Dial(uri)
@@ -36,6 +37,35 @@ func NewRabbitMQ(uri string) (*RabbitMQ, error) {
 	}
 
 	return rmq, nil
+}
+
+func (r *RabbitMQ) ConsumeMessages(queueName string, handler MessageHandler) error {
+	msgs, err := r.Channel.Consume(
+		queueName, // queue
+		"",        // consumer
+		true,      // auto-ack
+		false,     // exclusive
+		false,     // no-local
+		false,     // no-wait
+		nil,       // args
+	)
+	if err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+
+	go func() {
+		for msg := range msgs {
+			log.Printf("Received a message: %s", msg.Body)
+
+			if err := handler(ctx, msg); err != nil {
+				log.Fatalf("failed to handle the message: %v", err)
+			}
+		}
+	}()
+
+	return nil
 }
 
 func (r *RabbitMQ) PublishMessage(ctx context.Context, routingKey string, message string) error {
